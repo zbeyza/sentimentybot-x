@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Offline analysis for time-based patterns in negative tweets."""
+
 from pathlib import Path
 from typing import Iterable
 
@@ -12,6 +14,7 @@ from src.io import read_csv
 
 
 def _negative_filter(df: pd.DataFrame) -> pd.DataFrame:
+    """Return only negative tweets using either legacy or normalized labels."""
     if "Durum" in df.columns:
         return df.loc[df["Durum"] == -1]
 
@@ -25,6 +28,7 @@ def _negative_filter(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _print_frequency_table(df: pd.DataFrame, col: str) -> None:
+    """Print counts and ratios for a single categorical column."""
     counts = df[col].value_counts(dropna=False)
     ratio = 100 * counts / len(df) if len(df) else 0
     print(pd.DataFrame({col: counts, "Ratio": ratio}))
@@ -32,6 +36,7 @@ def _print_frequency_table(df: pd.DataFrame, col: str) -> None:
 
 
 def _save_bar_plot(df: pd.DataFrame, col: str, output_path: Path, order: Iterable[str]) -> None:
+    """Save a simple matplotlib bar chart (no seaborn dependency)."""
     counts = df[col].value_counts().reindex(order, fill_value=0)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.bar(counts.index.astype(str), counts.values)
@@ -44,6 +49,7 @@ def _save_bar_plot(df: pd.DataFrame, col: str, output_path: Path, order: Iterabl
 
 
 def run_analysis() -> None:
+    """Compute negative sentiment distributions and write plots to reports/."""
     data_path = config.DATA_DIR / "tweets_labeled.csv"
     df = read_csv(data_path)
 
@@ -54,6 +60,7 @@ def run_analysis() -> None:
         print("No negative tweets found for analysis.")
         return
 
+    # Keep the original reporting order from the prototype.
     cols = ["time_interval", "days", "seasons"]
     for col in cols:
         _print_frequency_table(negative_df, col)
