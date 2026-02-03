@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""CLI entry point for the offline pipeline."""
+
 import argparse
 
 from src.analysis import run_analysis
@@ -9,6 +11,7 @@ from src.train import train_model
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI flags for each pipeline step."""
     parser = argparse.ArgumentParser(description="SentimentyBot-X offline pipeline")
     parser.add_argument("--train", action="store_true", help="Train the model")
     parser.add_argument("--evaluate", action="store_true", help="Evaluate the model")
@@ -18,6 +21,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Run the selected pipeline steps (or all, by default)."""
     args = parse_args()
     run_all = not any([args.train, args.evaluate, args.predict, args.analysis])
 
