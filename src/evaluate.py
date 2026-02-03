@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+"""Model evaluation utilities and report generation."""
 
 import joblib
 import matplotlib.pyplot as plt
@@ -12,6 +12,7 @@ from src.train import prepare_training_data, split_data
 
 
 def evaluate_model() -> None:
+    """Print classification report and save a confusion matrix plot."""
     model_path = config.MODELS_DIR / "sentiment_model.joblib"
     if not model_path.exists():
         raise FileNotFoundError("Model not found. Train first with --train.")
@@ -19,6 +20,7 @@ def evaluate_model() -> None:
     df = read_csv(config.DATA_DIR / "tweets_labeled.csv")
     prepared = prepare_training_data(df)
 
+    # Keep the same train/test split as training for comparable metrics.
     X_train, X_test, y_train, y_test = split_data(prepared.X, prepared.y)
 
     model = joblib.load(model_path)
