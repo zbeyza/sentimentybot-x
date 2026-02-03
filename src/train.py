@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Training pipeline for the sentiment model."""
+
 from dataclasses import dataclass
 from typing import Dict, Tuple
 
@@ -16,6 +18,7 @@ from src.io import read_csv, save_json
 from src.text_preprocess import lowercase_series
 
 
+# Common Turkish label spellings mapped to English class names.
 LABEL_ALIASES = {
     "pozitif": "positive",
     "negatif": "negative",
@@ -33,6 +36,7 @@ class PreparedData:
 
 
 def _normalize_labels(series: pd.Series) -> pd.Series:
+    """Normalize label column to standardized string values."""
     if series.dtype.kind in {"i", "f"}:
         return series.map(config.LABEL_VALUE_MAP)
 
@@ -41,6 +45,7 @@ def _normalize_labels(series: pd.Series) -> pd.Series:
 
 
 def prepare_training_data(df: pd.DataFrame) -> PreparedData:
+    """Clean data and return texts + encoded labels."""
     if "tweet" not in df.columns:
         raise ValueError("Missing 'tweet' column in training data.")
 
@@ -49,12 +54,15 @@ def prepare_training_data(df: pd.DataFrame) -> PreparedData:
         raise ValueError("Missing label column (expected 'label' or 'Durum').")
 
     df = df.copy()
+    # Keep preprocessing minimal to preserve original signal.
     df["tweet"] = lowercase_series(df["tweet"])
     df[label_col] = _normalize_labels(df[label_col])
 
+    # Fixed label order keeps metrics and saved artifacts stable across runs.
     label_to_id = {label: idx for idx, label in enumerate(config.LABEL_ORDER)}
     id_to_label = {idx: label for label, idx in label_to_id.items()}
 
+    # Drop rows with missing text or labels.
     df = df.dropna(subset=["tweet", label_col])
     df[label_col] = df[label_col].map(label_to_id)
 
@@ -65,6 +73,7 @@ def prepare_training_data(df: pd.DataFrame) -> PreparedData:
 
 
 def build_pipeline() -> Pipeline:
+    """TF-IDF + Logistic Regression pipeline (same core model as the prototype)."""
     return Pipeline(
         steps=[
             ("tfidf", TfidfVectorizer(ngram_range=(1, 2), min_df=2)),
@@ -74,6 +83,7 @@ def build_pipeline() -> Pipeline:
 
 
 def split_data(X: pd.Series, y: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Stratified split to keep class balance in the holdout set."""
     return train_test_split(
         X,
         y,
@@ -84,6 +94,7 @@ def split_data(X: pd.Series, y: pd.Series) -> Tuple[pd.Series, pd.Series, pd.Ser
 
 
 def train_model() -> Tuple[Pipeline, PreparedData]:
+    """Train, evaluate quickly, and persist the model + label map."""
     df = read_csv(config.DATA_DIR / "tweets_labeled.csv")
     prepared = prepare_training_data(df)
 
