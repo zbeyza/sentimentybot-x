@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+"""Time-based feature engineering used in the original analysis."""
+
 from typing import Dict, List
 
 import pandas as pd
 
+# English month names -> Turkish equivalents.
 TURKISH_MONTH_MAP: Dict[str, str] = {
     "December": "Aralık",
     "January": "Ocak",
@@ -19,6 +22,7 @@ TURKISH_MONTH_MAP: Dict[str, str] = {
     "November": "Kasım",
 }
 
+# Month -> season mapping in Turkish.
 SEASON_MAP: Dict[str, str] = {
     "Ocak": "Kış",
     "Şubat": "Kış",
@@ -34,6 +38,7 @@ SEASON_MAP: Dict[str, str] = {
     "Aralık": "Kış",
 }
 
+# English weekday names -> Turkish equivalents.
 TURKISH_DAY_MAP: Dict[str, str] = {
     "Monday": "Pazartesi",
     "Tuesday": "Salı",
@@ -44,6 +49,7 @@ TURKISH_DAY_MAP: Dict[str, str] = {
     "Sunday": "Pazar",
 }
 
+# 2-hour windows merged into 4-hour buckets, matching the original logic.
 TIME_INTERVAL_MAP: Dict[str, str] = {
     "0-2": "22-02",
     "22-24": "22-02",
@@ -59,6 +65,7 @@ TIME_INTERVAL_MAP: Dict[str, str] = {
     "20-22": "18-22",
 }
 
+# Desired display order for charts.
 TIME_INTERVAL_ORDER: List[str] = [
     "22-02",
     "02-06",
@@ -82,6 +89,7 @@ SEASON_ORDER: List[str] = ["Kış", "İlkbahar", "Yaz", "Sonbahar"]
 
 
 def _ensure_istanbul_timezone(series: pd.Series) -> pd.Series:
+    """Convert any datetime series to Europe/Istanbul and drop tz info."""
     series = pd.to_datetime(series)
     if series.dt.tz is None:
         series = series.dt.tz_localize("UTC")
@@ -90,6 +98,7 @@ def _ensure_istanbul_timezone(series: pd.Series) -> pd.Series:
 
 
 def add_time_features(df: pd.DataFrame, date_col: str = "date") -> pd.DataFrame:
+    """Create month/season/day/time-interval features from the date column."""
     if date_col not in df.columns:
         raise ValueError(f"Missing date column: {date_col}")
 
@@ -101,6 +110,8 @@ def add_time_features(df: pd.DataFrame, date_col: str = "date") -> pd.DataFrame:
 
     df["days"] = df[date_col].dt.strftime("%A").replace(TURKISH_DAY_MAP)
 
+    # Build 2-hour windows and then merge into 4-hour buckets to match the
+    # original reporting granularity from the prototype analysis.
     df["hour"] = df[date_col].dt.hour
     df["4hour_interval"] = (df["hour"] // 2) * 2
 
