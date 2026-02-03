@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Batch prediction for the 2021 tweet dataset."""
+
 from typing import Dict
 
 import joblib
@@ -11,6 +13,7 @@ from src.text_preprocess import lowercase_series
 
 
 def predict_2021() -> None:
+    """Load the trained model and score tweets_21.csv."""
     model_path = config.MODELS_DIR / "sentiment_model.joblib"
     label_map_path = config.MODELS_DIR / "label_map.json"
 
@@ -21,6 +24,7 @@ def predict_2021() -> None:
     if "tweet" not in df.columns:
         raise ValueError("Missing 'tweet' column in prediction data.")
 
+    # Keep preprocessing consistent with training.
     df = df.copy()
     df["tweet"] = lowercase_series(df["tweet"])
 
@@ -33,6 +37,7 @@ def predict_2021() -> None:
     df["pred_label"] = [id_to_label.get(int(x), "unknown") for x in preds]
 
     if hasattr(model, "predict_proba"):
+        # Include probabilities when available (Logistic Regression supports it).
         proba = model.predict_proba(df["tweet"])
         class_ids = list(model.classes_)
         for idx, class_id in enumerate(class_ids):
